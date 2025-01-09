@@ -8,48 +8,49 @@ public class Main {
         Scanner sc = new Scanner(System.in);
 
         try {
-            // Capturar o valor de num
-            System.out.print("Digite o serial (0 a 10000): ");
+            // Capture the value of num
+            System.out.print("Enter the serial (0 to 10000): ");
             int num = sc.nextInt();
 
-            // Validar se o número está dentro do intervalo permitido
+            // Validate if the number is within the allowed range
             if (num < 0 || num > 10000) {
-                throw new IllegalArgumentException("O número deve estar entre 0 e 10000.");
+                throw new IllegalArgumentException("The number must be between 0 and 10000.");
             }
 
-            // Capturar os valores de token no formato 0xADF015
-            System.out.print("Digite o token hexadecimal (0x000000 a 0xFFFFFF): ");
+            // Capture the token value in the format 0xADF015
+            System.out.print("Enter the hexadecimal token (0x000000 to 0xFFFFFF): ");
             String tokenInput = sc.next();
 
-            // Validar e extrair os bytes do token
+            // Validate and extract the token bytes
             if (!tokenInput.startsWith("0x") || tokenInput.length() != 8) {
-                throw new IllegalArgumentException("O token deve estar no formato 0x seguido de 6 caracteres hexadecimais.");
+                throw new IllegalArgumentException(
+                        "The token must be in the format 0x followed by 6 hexadecimal characters.");
             }
 
             int tokenValue = Integer.parseInt(tokenInput.substring(2), 16);
 
-            // Validar se o token está dentro do intervalo permitido
+            // Validate if the token is within the allowed range
             if (tokenValue < 0x000000 || tokenValue > 0xFFFFFF) {
-                throw new IllegalArgumentException("O token deve estar entre 0x000000 e 0xFFFFFF.");
+                throw new IllegalArgumentException("The token must be between 0x000000 and 0xFFFFFF.");
             }
 
-            byte[] token = parseHexToken(tokenInput.substring(2)); // Remove o "0x" e processa
-            byte[] magicWord = {(byte) 0x99, (byte) 0xFF, (byte) 0xAA};
+            byte[] token = convertHexToBytes(tokenInput.substring(2)); // Remove the "0x" and process
+            byte[] magicWord = { (byte) 0x99, (byte) 0xFF, (byte) 0xAA };
             byte[] numChar = new byte[3];
             byte[] result = new byte[3];
 
-            // Copiar os 3 primeiros bytes de 'num' para 'numChar'
-            numChar = Arrays.copyOfRange(toLittleEndianBytes(num), 0, 3);
+            // Copy the first 3 bytes of 'num' to 'numChar'
+            numChar = Arrays.copyOfRange(intToBytes(num), 0, 3);
 
-            // Exibe o resultado da operação XOR
-            System.out.print("\nResultado XOR (Access Key): 0x");
+            // Display the XOR operation result
+            System.out.print("\nXOR Result (Access Key): 0x");
             for (int i = 0; i < 3; i++) {
                 result[i] = (byte) ((token[i] ^ magicWord[i]) ^ numChar[i]);
                 System.out.printf("%02X", result[i]);
             }
             System.out.println();
 
-            // Calcular SHA1 do resultado e exibir os 3 primeiros bytes
+            // Calculate SHA1 of the result and display the first 3 bytes
             try {
                 byte[] sha1Hash = calculateSHA1(result);
                 System.out.print("SHA1 (output): 0x");
@@ -58,47 +59,47 @@ public class Main {
                 }
                 System.out.println();
 
-                // Apresentar SHA1 "final" no formato ######
+                // Display the "final" SHA1 in the format ######
                 String finalSha1Hex = String.format("%02X%02X%02X", sha1Hash[0], sha1Hash[1], sha1Hash[2]);
                 System.out.printf("Final: \"%s\"%n", finalSha1Hex);
             } catch (NoSuchAlgorithmException e) {
-                System.err.println("Erro ao calcular SHA1: " + e.getMessage());
+                System.err.println("Error calculating SHA1: " + e.getMessage());
             }
 
         } catch (IllegalArgumentException e) {
-            System.err.println("Erro: " + e.getMessage());
+            System.err.println("Error: " + e.getMessage());
         } catch (Exception e) {
-            System.err.println("Erro inesperado:" + e.getMessage());
+            System.err.println("Unexpected error:" + e.getMessage());
         } finally {
             sc.close();
         }
     }
 
     /**
-     * Converte uma string hexadecimal em um array de bytes.
+     * Converts a hexadecimal string to a byte array.
      */
-    public static byte[] parseHexToken(String hex) {
+    public static byte[] convertHexToBytes(String hex) {
         byte[] bytes = new byte[3];
         for (int i = 0; i < 3; i++) {
-            String byteHex = hex.substring(i * 2, (i + 1) * 2); // Pega cada par de caracteres
-            bytes[i] = (byte) Integer.parseInt(byteHex, 16); // Converte de hexadecimal para byte
+            String byteHex = hex.substring(i * 2, (i + 1) * 2); // Get each pair of characters
+            bytes[i] = (byte) Integer.parseInt(byteHex, 16); // Convert from hexadecimal to byte
         }
         return bytes;
     }
 
     /**
-     * Converte um inteiro em uma representação little-endian (4 bytes) em um array de bytes.
+     * Converts an integer to a little-endian byte array (4 bytes).
      */
-    public static byte[] toLittleEndianBytes(int value) {
+    public static byte[] intToBytes(int value) {
         byte[] bytes = new byte[4];
         for (int i = 0; i < 4; i++) {
-            bytes[i] = (byte) ((value >> (8 * i)) & 0xFF); // Desloca e pega os 8 bits menos significativos
+            bytes[i] = (byte) ((value >> (8 * i)) & 0xFF); // Shift and get the least significant 8 bits
         }
         return bytes;
     }
 
     /**
-     * Calcula o hash SHA1 de um array de bytes.
+     * Calculates the SHA1 hash of a byte array.
      */
     public static byte[] calculateSHA1(byte[] input) throws NoSuchAlgorithmException {
         MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
